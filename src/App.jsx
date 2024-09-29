@@ -37,8 +37,18 @@ export default function App() {
         })
       );
       setIsEditing(false);
+      alert("Sửa thông tin thành công!");
     } else {
-      setUsers([...users, user]);
+      if (
+        user.name.length > 0 &&
+        user.age.length > 0 &&
+        user.gender.length > 0 &&
+        user.address.length > 0
+      ) {
+        setUsers([...users, user]);
+      } else {
+        alert("Vui lòng nhập đầy đủ thông tin!");
+      }
     }
 
     setUser({
@@ -58,6 +68,7 @@ export default function App() {
 
   const handleDeleteUser = (id) => {
     setUsers(users.filter((user) => user.id !== id));
+    alert("Xóa thông tin thành công!");
   };
 
   return (
