@@ -1,35 +1,103 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// this is component
 
-function App() {
-  const [count, setCount] = useState(0)
+import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { FCommonTable } from "./components";
+
+// import { FButton, FInput, FCommonTable } from "./components/index";
+
+export default function App() {
+  const columns = ["id", "name", "age", "gender", "address", "action"];
+
+  const [users, setUsers] = useState([
+    { id: uuidv4(), name: "John", age: 25, gender: "male", address: "HN" },
+  ]);
+
+  const [user, setUser] = useState({
+    id: uuidv4(),
+    name: "",
+    age: "",
+    gender: "",
+    address: "",
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+
+  const onInput = (e, key) => {
+    const updateUser = { ...user };
+    updateUser[key] = e.target.value;
+    setUser({ ...updateUser });
+  };
+
+  const onSave = () => {
+    if (isEditing) {
+      setUsers(
+        users.map((u) => {
+          return u.id === user.id ? user : u;
+        })
+      );
+      setIsEditing(false);
+    } else {
+      setUsers([...users, user]);
+    }
+
+    setUser({
+      id: uuidv4(),
+      name: "",
+      age: "",
+      gender: "",
+      address: "",
+    });
+  };
+
+  const handleEditUser = (id) => {
+    const editUser = users.find((user) => user.id === id);
+    setUser(editUser);
+    setIsEditing(true);
+  };
+
+  const handleDeleteUser = (id) => {
+    setUsers(users.filter((user) => user.id !== id));
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div>
+      <input
+        type="text"
+        placeholder="name"
+        onChange={(e) => onInput(e, "name")}
+        value={user.name}
+      />
+      <input
+        type="text"
+        placeholder="age"
+        onChange={(e) => onInput(e, "age")}
+        value={user.age}
+      />
+      <select
+        name="gender"
+        onChange={(e) => onInput(e, "gender")}
+        value={user.gender}
+      >
+        <option value="">gender</option>
+        <option value="male">male</option>
+        <option value="female">female</option>
+      </select>
+      <input
+        type="text"
+        placeholder="address"
+        onChange={(e) => onInput(e, "address")}
+        value={user.address}
+      />
+      <button onClick={onSave}>{isEditing ? "Update" : "Save"}</button>
+      <hr />
 
-export default App
+      <FCommonTable
+        columns={columns}
+        rows={users}
+        handleEditUser={handleEditUser}
+        handleDeleteUser={handleDeleteUser}
+      />
+    </div>
+  );
+}
