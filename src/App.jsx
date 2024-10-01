@@ -7,7 +7,33 @@ import { FCommonTable } from "./components";
 // import { FButton, FInput, FCommonTable } from "./components/index";
 
 export default function App() {
-  const columns = ["id", "name", "age", "gender", "address", "action"];
+  const columns = [
+    {
+      name: "id",
+      text: "Id",
+    },
+    {
+      name: "name",
+      text: "Tên",
+      width: "100px",
+    },
+    {
+      name: "age",
+      text: "Tuổi",
+    },
+    {
+      name: "gender",
+      text: "Giới tính",
+    },
+    {
+      name: "address",
+      text: "Địa chỉ",
+    },
+    {
+      name: "action",
+      text: "",
+    },
+  ];
 
   const [users, setUsers] = useState([
     { id: uuidv4(), name: "John", age: 25, gender: "male", address: "HN" },
@@ -37,18 +63,8 @@ export default function App() {
         })
       );
       setIsEditing(false);
-      alert("Sửa thông tin thành công!");
     } else {
-      if (
-        user.name.length > 0 &&
-        user.age.length > 0 &&
-        user.gender.length > 0 &&
-        user.address.length > 0
-      ) {
-        setUsers([...users, user]);
-      } else {
-        alert("Vui lòng nhập đầy đủ thông tin!");
-      }
+      setUsers([...users, user]);
     }
 
     setUser({
@@ -60,15 +76,13 @@ export default function App() {
     });
   };
 
-  const handleEditUser = (id) => {
-    const editUser = users.find((user) => user.id === id);
-    setUser(editUser);
+  const onUpdate = (row) => {
+    console.log(row);
     setIsEditing(true);
   };
 
-  const handleDeleteUser = (id) => {
+  const onDelete = (id) => {
     setUsers(users.filter((user) => user.id !== id));
-    alert("Xóa thông tin thành công!");
   };
 
   return (
@@ -106,8 +120,9 @@ export default function App() {
       <FCommonTable
         columns={columns}
         rows={users}
-        handleEditUser={handleEditUser}
-        handleDeleteUser={handleDeleteUser}
+        maxWidth={"800px"}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
       />
     </div>
   );
