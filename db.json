@@ -1,0 +1,44 @@
+{
+  "categories": [
+    {
+      "id": "6aa2ecd7-79f1-4ee3-98f1-f964057701af",
+      "name": "Category 1",
+      "orderNum": 12
+    },
+    {
+      "id": "612dbb09-abfb-4462-8796-0e9f771427a2",
+      "name": "123",
+      "orderNum": 1
+    },
+    {
+      "id": "13dd544a-f53d-449e-a975-e408ad72a13e",
+      "name": "User 6",
+      "orderNum": 123
+    },
+    {
+      "id": "6caacae8-401a-4176-a94f-948484492785",
+      "name": "Cate 4",
+      "orderNum": 6
+    }
+  ],
+  "products": [
+    {
+      "id": "5f449e40-844b-4455-93fd-4b8ebee1f8a8",
+      "name": "Product 1",
+      "categoryId": "13dd544a-f53d-449e-a975-e408ad72a13e",
+      "orderNum": 12
+    },
+    {
+      "id": "eb39d00c-91da-4858-a555-d147ed85b0d3",
+      "name": "Product 2",
+      "categoryId": "13dd544a-f53d-449e-a975-e408ad72a13e",
+      "orderNum": 3
+    },
+    {
+      "id": "b275240a-0bf4-4b57-947f-e6693296d62f",
+      "name": "Product 3",
+      "categoryId": "6caacae8-401a-4176-a94f-948484492785",
+      "orderNum": 3
+    }
+  ]
+}

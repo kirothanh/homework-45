@@ -7,31 +7,77 @@ import { v4 as uuidv4 } from "uuid";
 import "react-toastify/dist/ReactToastify.css";
 import HomeIcon from "@mui/icons-material/Home";
 import { useNavigate } from "react-router-dom";
+import { sortElement, onSort } from "../../utils/sort";
+import axios from "axios";
 
 export default function Categories() {
   const [showDialog, setShowDialog] = useState(false);
   const [category, setCategory] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
-
-  const [categories, setCategories] = useState([
-    {
-      id: 1,
-      name: "Quan Ao",
-      orderNum: 2,
-    },
-    {
-      id: 2,
-      name: "Dien Thoai",
-      orderNum: 1,
-    },
-    {
-      id: 3,
-      name: "Do An",
-      orderNum: 3,
-    },
-  ]);
-
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+  const SERVER_API = import.meta.env.VITE_SERVER_API;
+
+  const getCategories = async () => {
+    try {
+      const response = await axios.get(`${SERVER_API}/categories`);
+      const { data } = response;
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Lỗi khi lấy danh mục!", {
+        position: "top-right",
+        autoClose: 1000,
+      });
+    }
+  };
+
+  const addCategory = async (newCategory) => {
+    try {
+      const response = await axios.post(
+        `${SERVER_API}/categories`,
+        newCategory
+      );
+      console.log("add", response);
+      return response.data;
+    } catch (error) {
+      console.error("Error adding category:", error);
+      throw error;
+    }
+  };
+
+  const updateCategory = async (id, updatedCategory) => {
+    try {
+      const response = await axios.patch(
+        `${SERVER_API}/categories/${id}`,
+        updatedCategory
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating category:", error);
+      throw error;
+    }
+  };
+
+  const deleteCategory = async (id) => {
+    try {
+      await axios.delete(`${SERVER_API}/categories/${id}`);
+      toast.success("Xóa danh mục thành công!", {
+        position: "top-right",
+        autoClose: 1000,
+      });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast.error("Lỗi khi xóa danh mục!", {
+        position: "top-right",
+        autoClose: 1000,
+      });
+    }
+  };
+
+  useEffect(() => {
+    getCategories();
+  }, []);
 
   useEffect(() => {
     if (categories.length > 0) {
@@ -58,22 +104,9 @@ export default function Categories() {
     },
   ];
 
-  const sortedCategories = [...categories].sort((a, b) => {
-    if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === "asc" ? -1 : 1;
-    }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === "asc" ? 1 : -1;
-    }
-    return 0;
-  });
-
-  const onSort = (columnName) => {
-    let direction = "asc";
-    if (sortConfig.key === columnName && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key: columnName, direction });
+  const sortedCategories = sortElement(sortConfig, categories);
+  const handleSort = (columnName) => {
+    onSort(columnName, sortConfig, setSortConfig);
   };
 
   const onUpdate = (category) => {
@@ -81,13 +114,9 @@ export default function Categories() {
     setShowDialog(true);
   };
 
-  const onDelete = (id) => {
-    const filteredCategories = categories.filter((cat) => cat.id !== id);
-    setCategories(filteredCategories);
-    toast.success("Xóa danh mục thành công!", {
-      position: "top-right",
-      autoClose: 1000,
-    });
+  const onDelete = async (id) => {
+    await deleteCategory(id);
+    setCategories(categories.filter((cat) => cat.id !== id));
   };
 
   const onCloseDialog = () => {
@@ -99,10 +128,10 @@ export default function Categories() {
     setShowDialog(true);
   };
 
-  const onAddAndUpdateCategory = (e) => {
+  const onAddAndUpdateCategory = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const name = formData.get("name");
+    const name = formData.get("name").trim();
     const orderNum = Number(formData.get("orderNum"));
 
     if (!name || !orderNum) {
@@ -115,53 +144,23 @@ export default function Categories() {
     }
 
     if (category.id) {
-      const updatedCategories = categories.map((item) => {
-        if (item.id === category.id) {
-          const checkOrderNumExist = categories.find((cat) => {
-            return cat.orderNum === orderNum && cat.id !== category.id;
-          });
-
-          if (checkOrderNumExist) {
-            toast.error("OrderNum đã tồn tại, Vui lòng nhập số khác!", {
-              position: "top-right",
-              autoClose: 1000,
-            });
-            setShowDialog(false);
-            return item;
-          } else {
-            toast.success("Cập nhật danh mục thành công!", {
-              position: "top-right",
-              autoClose: 1000,
-            });
-            return { ...item, name, orderNum };
-          }
-        } else {
-          return item;
-        }
+      const updatedCategory = { ...category, name, orderNum };
+      await updateCategory(category.id, updatedCategory);
+      setCategories((prev) =>
+        prev.map((item) => (item.id === category.id ? updatedCategory : item))
+      );
+      toast.success("Cập nhật danh mục thành công!", {
+        position: "top-right",
+        autoClose: 1000,
       });
-
-      setCategories(updatedCategories);
     } else {
-      const checkOrderNumExist = categories.find((category) => {
-        return category.orderNum === orderNum;
-      });
-
-      if (checkOrderNumExist) {
-        toast.error("OrderNum đã tồn tại, Vui lòng nhập số khác!", {
-          position: "top-right",
-          autoClose: 1000,
-        });
-        setShowDialog(false);
-        return;
-      }
-
-      const category = {
+      const newCategory = {
         id: uuidv4(),
         name,
         orderNum,
       };
-
-      setCategories([...categories, category]);
+      await addCategory(newCategory);
+      setCategories([...categories, newCategory]);
       toast.success("Tạo mới danh mục thành công!", {
         position: "top-right",
         autoClose: 1000,
@@ -197,7 +196,7 @@ export default function Categories() {
           rows={sortedCategories}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          onSort={onSort}
+          onSort={handleSort}
           sortConfig={sortConfig}
         />
       </div>

@@ -7,22 +7,74 @@ import { v4 as uuidv4 } from "uuid";
 import "react-toastify/dist/ReactToastify.css";
 import HomeIcon from "@mui/icons-material/Home";
 import { useNavigate } from "react-router-dom";
+import { sortElement, onSort } from "../../utils/sort";
+import axios from "axios";
 
 export default function Products() {
   const [showDialog, setShowDialog] = useState(false);
   const [product, setProduct] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
-
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Product 1",
-      categoryId: 1,
-      orderNum: 1,
-    },
-  ]);
-
+  const [products, setProducts] = useState([]);
   const navigate = useNavigate();
+  const SERVER_API = import.meta.env.VITE_SERVER_API;
+
+  const getProducts = async () => {
+    try {
+      const response = await axios.get(`${SERVER_API}/products`);
+      const { data } = response;
+      setProducts(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Lỗi khi lấy sản phẩm!", {
+        position: "top-right",
+        autoClose: 1000,
+      });
+    }
+  };
+
+  const addProduct = async (newProduct) => {
+    try {
+      const response = await axios.post(`${SERVER_API}/products`, newProduct);
+      console.log("add", response);
+      return response.data;
+    } catch (error) {
+      console.error("Error adding product:", error);
+      throw error;
+    }
+  };
+
+  const updateProduct = async (id, updatedProduct) => {
+    try {
+      const response = await axios.patch(
+        `${SERVER_API}/products/${id}`,
+        updatedProduct
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating product:", error);
+      throw error;
+    }
+  };
+
+  const deleteProduct = async (id) => {
+    try {
+      await axios.delete(`${SERVER_API}/products/${id}`);
+      toast.success("Xóa sản phẩm thành công!", {
+        position: "top-right",
+        autoClose: 1000,
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error("Lỗi khi xóa sản phẩm!", {
+        position: "top-right",
+        autoClose: 1000,
+      });
+    }
+  };
+
+  useEffect(() => {
+    getProducts();
+  }, []);
 
   useEffect(() => {
     if (products.length > 0) {
@@ -55,40 +107,31 @@ export default function Products() {
     },
   ];
 
-  const sortedProducts = [...products].sort((a, b) => {
-    if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === "asc" ? -1 : 1;
-    }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === "asc" ? 1 : -1;
-    }
-    return 0;
-  });
-
-  const onSort = (columnName) => {
-    let direction = "asc";
-    if (sortConfig.key === columnName && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key: columnName, direction });
+  const sortedProducts = sortElement(sortConfig, products);
+  const handleSort = (columnName) => {
+    onSort(columnName, sortConfig, setSortConfig);
   };
 
   const onUpdate = (product) => {
-    console.log(product);
     setProduct(product);
     setShowDialog(true);
   };
 
-  const onDelete = (id) => {
-    const filteredProducts = products.filter((prod) => prod.id !== id);
-    setProducts(filteredProducts);
-    toast.success("Xóa sản phẩm thành công!", {
-      position: "top-right",
-      autoClose: 1000,
-    });
+  const onDelete = async (id) => {
+    await deleteProduct(id);
+    setProducts(products.filter((prod) => prod.id !== id));
   };
 
-  const onAddAndUpdateProduct = (e) => {
+  const onCloseDialog = () => {
+    setShowDialog(false);
+  };
+
+  const onOpenDialog = () => {
+    setProduct({});
+    setShowDialog(true);
+  };
+
+  const onAddAndUpdateProduct = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const name = formData.get("name");
@@ -105,54 +148,24 @@ export default function Products() {
     }
 
     if (product.id) {
-      const updatedProducts = products.map((item) => {
-        if (item.id === product.id) {
-          const checkOrderNumExist = products.find((prod) => {
-            return prod.orderNum === orderNum && prod.id !== product.id;
-          });
-
-          if (checkOrderNumExist) {
-            toast.error("OrderNum đã tồn tại, Vui lòng nhập số khác!", {
-              position: "top-right",
-              autoClose: 1000,
-            });
-            setShowDialog(false);
-            return item;
-          } else {
-            toast.success("Cập nhật sản phẩm thành công!", {
-              position: "top-right",
-              autoClose: 1000,
-            });
-            return { ...item, name, categoryId, orderNum };
-          }
-        } else {
-          return item;
-        }
+      const updatedProduct = { ...product, name, categoryId, orderNum };
+      await updateProduct(product.id, updatedProduct);
+      setProducts((prev) =>
+        prev.map((item) => (item.id === product.id ? updatedProduct : item))
+      );
+      toast.success("Cập nhật sản phẩm thành công!", {
+        position: "top-right",
+        autoClose: 1000,
       });
-
-      setProducts(updatedProducts);
     } else {
-      const checkOrderNumExist = products.find((prod) => {
-        return prod.orderNum === orderNum;
-      });
-
-      if (checkOrderNumExist) {
-        toast.error("OrderNum đã tồn tại, Vui lòng nhập số khác!", {
-          position: "top-right",
-          autoClose: 1000,
-        });
-        setShowDialog(false);
-        return;
-      }
-
-      const product = {
+      const newProduct = {
         id: uuidv4(),
         name,
         categoryId,
         orderNum,
       };
-
-      setProducts([...products, product]);
+      await addProduct(newProduct);
+      setProducts([...products, newProduct]);
       toast.success("Tạo mới sản phẩm thành công!", {
         position: "top-right",
         autoClose: 1000,
@@ -161,15 +174,6 @@ export default function Products() {
 
     setShowDialog(false);
     setProduct({});
-  };
-
-  const onCloseDialog = () => {
-    setShowDialog(false);
-  };
-
-  const onOpenDialog = () => {
-    setProduct({});
-    setShowDialog(true);
   };
 
   return (
@@ -197,7 +201,7 @@ export default function Products() {
           rows={sortedProducts}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          onSort={onSort}
+          onSort={handleSort}
           sortConfig={sortConfig}
         />
       </div>
