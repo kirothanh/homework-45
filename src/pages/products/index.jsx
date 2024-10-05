@@ -143,7 +143,7 @@ export default function Products() {
         position: "top-right",
         autoClose: 1000,
       });
-      setShowDialog(false);
+      // setShowDialog(false);
       return;
     }
 
